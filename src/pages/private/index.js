@@ -54,7 +54,7 @@ export default function Private() {
     setOpen(false);
   };
   const {auth} = useFirebase();
-  const handleSignOut = e => {
+  const handleSignOut = () => {
       if(window.confirm('Apakah anda yakin ingin logout ?'))
       auth.signOut();
   }
