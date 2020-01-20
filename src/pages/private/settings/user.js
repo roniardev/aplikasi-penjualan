@@ -4,12 +4,18 @@ import TextField from '@material-ui/core/TextField';
 import {useFirebase} from '../../../components/FirebaseProvider';
 import { useSnackbar } from 'notistack';
 
+import isEmail from 'validator/lib/isEmail';
+
+import useStyles from './styles/user';
 function UserSettings() {
+    const classes = useStyles();
     const {user} = useFirebase();
     const displayNameRef = useRef();
+    const emailRef = useRef();
     const [isSubmitting, setSubmitting] = useState(false);
     const [error, setError] = useState({
-        displayName:''
+        displayName:'',
+        email: ''
     })
     const {enqueueSnackbar} = useSnackbar();
     const saveDisplayName = async e => {
@@ -29,12 +35,58 @@ function UserSettings() {
             enqueueSnackbar('Data pengguna berhasil diperbarui', {variant: 'success'})
         }
     }
-    return <>
-        <TextField id="displayName" name="displayName" label="Nama" inputProps={{
+    const updateEmail = async e  => {
+        const email = emailRef.current.value;
+        if(!email) {
+            setError({
+                email: 'Email wajib diisi'
+            })
+        }else if(!isEmail(email)){
+            setError({
+                email: 'Email tidak valid'
+            })
+        }else if(email !== user.email){
+            setError({
+                email: ''
+            })
+            setSubmitting(true);
+            try {
+                await user.updateEmail(email);
+                enqueueSnackbar('Email berhasil diperbarui', {variant: 'success'});
+            } catch (error) {
+                let emailError = '';
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        emailError = 'Email sudah digunakan oleh pengguna lain'
+                        break;
+                    case 'auth/invalid-email':
+                        emailError = 'Email tidak valid'
+                        break;
+                    case 'auth/requires -recent-login':
+                        emailError = 'silahkan login ulang untuk memperbarui Email'
+                        break;
+
+                    default:
+                        emailError = 'Terjadi kesalahan, silahkan coba lagi'
+                        break;
+                }
+                setError({
+                    email: emailError
+                })
+            }
+            setSubmitting(false)
+        }
+    }
+    return <div className={classes.userSettings}>
+        <TextField margin="normal" id="displayName" name="displayName" label="Nama" inputProps={{
             ref: displayNameRef,
             onBlur: saveDisplayName
         }} disabled={isSubmitting} defaultValue={user.displayName} helperText={error.displayName} error={error.displayName? true:false} />
-    </>
+        <TextField margin="normal" id="email" name="email" label="Email" defaultValue={user.email} inputProps={{
+            ref: emailRef,
+            onBlur: updateEmail
+        }} helperText={error.email} error={error.email?true:false} disabled={isSubmitting} />
+    </div>
 };
 
 export default UserSettings;
