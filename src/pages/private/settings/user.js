@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
 
 import TextField from '@material-ui/core/TextField';
+import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
 import {useFirebase} from '../../../components/FirebaseProvider';
 import { useSnackbar } from 'notistack';
 
@@ -77,6 +79,15 @@ function UserSettings() {
             setSubmitting(false)
         }
     }
+    const sendEmailVerification = async e => {
+        const actionCodeSettings = {
+            url: `${window.location.origin}/login`
+        }
+        setSubmitting(true);
+        await user.sendEmailVerification(actionCodeSettings);
+        enqueueSnackbar(`Email verifikasi telah dikirimkan ke ${emailRef.current.value}`, {variant: 'success'})
+        setSubmitting(false);
+    }
     return <div className={classes.userSettings}>
         <TextField margin="normal" id="displayName" name="displayName" label="Nama" inputProps={{
             ref: displayNameRef,
@@ -86,6 +97,11 @@ function UserSettings() {
             ref: emailRef,
             onBlur: updateEmail
         }} helperText={error.email} error={error.email?true:false} disabled={isSubmitting} />
+        {user.emailVerified ?
+        <Typography variant="subtitle1" color="primary">Email sudah terverifikasi</Typography>
+        :
+        <Button onClick={sendEmailVerification} disabled={isSubmitting} variant="outlined">Kirim Email Verifikasi</Button>
+         }
     </div>
 };
 
