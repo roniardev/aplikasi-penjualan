@@ -161,7 +161,7 @@ export default function Private() {
                   }}
                 >
                   <ListItemIcon>
-                    <SettingsIcon />
+                    <ShoppingCartIcon />
                   </ListItemIcon>
                   <ListItemText primary="Transaksi" />
                 </ListItem>
@@ -180,7 +180,7 @@ export default function Private() {
                   }}
                 >
                   <ListItemIcon>
-                    <ShoppingCartIcon />
+                    <SettingsIcon />
                   </ListItemIcon>
                   <ListItemText primary="Pengaturan" />
                 </ListItem>
