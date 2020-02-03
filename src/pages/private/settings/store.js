@@ -6,8 +6,17 @@ import Button from "@material-ui/core/Button";
 import useStyles from "./styles/store";
 //validator
 import isURL from "validator/lib/isURL";
+//Firebase hooks
+import { useFirebase } from "../../../components/FirebaseProvider";
+//snackbar
+import { useSnackbar } from "notistack";
 
 function StoreSettings() {
+  //snackbar
+  const { enqueueSnackbar } = useSnackbar();
+  //FirebaseProvider
+  const { firestore, user } = useFirebase();
+  const tokoDoc = firestore.doc(`toko/${user.uid}`);
   //styles
   const classes = useStyles();
   //Set error
@@ -52,11 +61,20 @@ function StoreSettings() {
     }
     return newError;
   };
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
     const findErrors = validate();
     if (Object.values(findErrors).some(err => err !== "")) {
       setError(findErrors);
+    } else {
+      setSubmitting(true);
+      try {
+        await tokoDoc.set(form, { merge: true });
+        enqueueSnackbar("Data toko berhasil disimpan", { variant: "success" });
+      } catch (e) {
+        enqueueSnackbar(e.message, { variant: "error" });
+      }
+      setSubmitting(false);
     }
   };
   return (
