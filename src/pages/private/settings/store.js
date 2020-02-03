@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 //Material UI
 import TextField from "@material-ui/core/TextField";
 import Button from "@material-ui/core/Button";
@@ -8,8 +8,13 @@ import useStyles from "./styles/store";
 import isURL from "validator/lib/isURL";
 //Firebase hooks
 import { useFirebase } from "../../../components/FirebaseProvider";
+import { useDocument } from "react-firebase-hooks/firestore";
 //snackbar
 import { useSnackbar } from "notistack";
+//AppPageLoading
+import AppPageLoading from "../../../components/AppPageLoading";
+//React router
+import { Prompt } from "react-router-dom";
 
 function StoreSettings() {
   //snackbar
@@ -17,6 +22,7 @@ function StoreSettings() {
   //FirebaseProvider
   const { firestore, user } = useFirebase();
   const tokoDoc = firestore.doc(`toko/${user.uid}`);
+  const [snapshot, loading] = useDocument(tokoDoc);
   //styles
   const classes = useStyles();
   //Set error
@@ -35,12 +41,24 @@ function StoreSettings() {
   });
   //State kondisi submitting
   const [isSubmitting, setSubmitting] = useState(false);
+  //State kondisi change
+  const [isSomethingChange, setSomethingChange] = useState(false);
   const handleChange = e => {
     setForm({
       ...form,
       [e.target.name]: e.target.value
     });
+    setError({
+      [e.target.name]: ""
+    });
+    setSomethingChange(true);
   };
+  //useEffect untuk mengambil data toko
+  useEffect(() => {
+    if (snapshot) {
+      setForm(snapshot.data());
+    }
+  }, [snapshot]);
   //Validasi
   const validate = () => {
     const newError = { ...error };
@@ -70,6 +88,7 @@ function StoreSettings() {
       setSubmitting(true);
       try {
         await tokoDoc.set(form, { merge: true });
+        setSomethingChange(false);
         enqueueSnackbar("Data toko berhasil disimpan", { variant: "success" });
       } catch (e) {
         enqueueSnackbar(e.message, { variant: "error" });
@@ -77,6 +96,9 @@ function StoreSettings() {
       setSubmitting(false);
     }
   };
+  if (loading) {
+    return <AppPageLoading />;
+  }
   return (
     <div className={classes.storeSettings}>
       <form onSubmit={handleSubmit} noValidate>
@@ -138,12 +160,16 @@ function StoreSettings() {
           className={classes.actionButton}
           variant="contained"
           color="primary"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isSomethingChange}
           type="submit"
         >
           Simpan
         </Button>
       </form>
+      <Prompt
+        when={isSomethingChange}
+        message="Perubahan data belum disimpan, apakah anda yakin untuk keluar halaman"
+      />
     </div>
   );
 }
