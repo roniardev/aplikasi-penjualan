@@ -4,6 +4,10 @@ service cloud.firestore {
     match /toko/{uid} {
       allow read: if request.auth.uid == uid;
       allow write: if request.auth.uid ==uid;
+
+      match /produk/{produkId} {
+        allow read, write: if request.auth.uid == uid;
+      }
     }
   }
 }
