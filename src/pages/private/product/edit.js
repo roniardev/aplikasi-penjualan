@@ -7,6 +7,7 @@ import Typography from "@material-ui/core/Typography";
 import { useFirebase } from "../../../components/FirebaseProvider";
 import { useDocument } from "react-firebase-hooks/firestore";
 import AppPageLoading from "../../../components/AppPageLoading";
+import {useSnackbar} from "notistack";
 
 function EditProduct({ match }) {
   //firebase
@@ -14,6 +15,7 @@ function EditProduct({ match }) {
   const produkDoc = firestore.doc(
     `toko/${user.uid}/produk/${match.params.productId}`
   );
+  const {enqueueSnackbar} = useSnackbar();
   const [snapshot, loading] = useDocument(produkDoc);
   const [form, setForm] = useState({
     nama: "",
@@ -29,9 +31,10 @@ function EditProduct({ match }) {
     stok: "",
     deskripsi: ""
   });
+  const [isSubmitting,setSubmitting] = useState(false);
   useEffect(() => {
     if (snapshot) {
-      setForm({ ...form, ...snapshot.data() });
+      setForm(currentForm =>({ ...currentForm, ...snapshot.data() }));
     }
   }, [snapshot]);
   const handleChange = e => {
@@ -62,6 +65,18 @@ function EditProduct({ match }) {
     const findErrors = validate();
     if (Object.values(findErrors).some(err => err !== "")) {
       setError(findErrors);
+    }else{
+        setSubmitting(true);
+        try {
+            await produkDoc.set(form, {merge:true});
+            enqueueSnackbar("Data produk berhasil diperbarui", {variant:"success"})
+        }
+        catch (e) {
+            enqueueSnackbar("Data produk gagal diperbarui, silahkan coba lagi", {variant:"error"})
+        }
+        setSubmitting(false);
+
+       
     }
   };
   if (loading) {
@@ -70,7 +85,7 @@ function EditProduct({ match }) {
   return (
     <div>
       <Typography component="h1" variant="h5">
-        Edit Produk:
+        Edit Produk: {form.nama}
       </Typography>
       <Grid container alignItems="center" justify="center">
         <Grid item xs={12} sm={6}>
@@ -84,6 +99,7 @@ function EditProduct({ match }) {
               onChange={handleChange}
               helperText={error.nama}
               error={error.nama ? true : false}
+              disabled={isSubmitting}
               fullWidth
               required
             />
@@ -96,6 +112,7 @@ function EditProduct({ match }) {
               onChange={handleChange}
               helperText={error.sku}
               error={error.sku ? true : false}
+              disabled={isSubmitting}
               fullWidth
             />
             <TextField
@@ -108,6 +125,7 @@ function EditProduct({ match }) {
               onChange={handleChange}
               helperText={error.harga}
               error={error.harga ? true : false}
+              disabled={isSubmitting}
               fullWidth
               required
             />
@@ -121,6 +139,7 @@ function EditProduct({ match }) {
               onChange={handleChange}
               helperText={error.stok}
               error={error.stok ? true : false}
+              disabled={isSubmitting}
               fullWidth
               required
             />
@@ -133,6 +152,7 @@ function EditProduct({ match }) {
               onChange={handleChange}
               helperText={error.deskripsi}
               error={error.deskripsi ? true : false}
+              disabled={isSubmitting}
               rowsMax={3}
               multiline
               fullWidth
@@ -148,6 +168,7 @@ function EditProduct({ match }) {
             variant="contained"
             type="submit"
             form="produk-form"
+            disabled={isSubmitting}
           >
             Simpan
           </Button>
